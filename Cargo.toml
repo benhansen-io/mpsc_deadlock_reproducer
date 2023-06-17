@@ -3,8 +3,10 @@ name = "mpsc_deadlock_reproducer"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+crossbeam = ["crossbeam/crossbeam-channel"]
 
 [dependencies]
 core_affinity = "0.8.0"
+crossbeam = { version = "0.8.2", optional = true }
 thread-priority = "0.13.1"

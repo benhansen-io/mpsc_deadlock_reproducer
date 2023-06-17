@@ -1,14 +1,30 @@
 use std::{
-    sync::{mpsc, Arc},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
 use thread_priority::ThreadPriority;
 
+#[cfg(not(feature = "crossbeam"))]
+use std::sync::mpsc::channel;
+#[cfg(not(feature = "crossbeam"))]
+use std::sync::mpsc::TryRecvError;
+
+#[cfg(feature = "crossbeam")]
+use crossbeam::channel::unbounded as channel;
+#[cfg(feature = "crossbeam")]
+use crossbeam::channel::TryRecvError;
+
 fn main() {
     const PINNED_CORE: usize = 2;
 
-    let (sender, receiver) = mpsc::channel::<usize>();
+    if cfg!(feature = "crossbeam") {
+        println!("Using crossbeam::unbounded channels");
+    } else {
+        println!("Using std::sync::mpsc channels");
+    }
+
+    let (sender, receiver) = channel::<usize>();
 
     std::thread::Builder::new()
         .name("sending".to_owned())
@@ -43,10 +59,10 @@ fn main() {
                         Ok(_) => {
                             num_received.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                         }
-                        Err(mpsc::TryRecvError::Empty) => {
+                        Err(TryRecvError::Empty) => {
                             std::thread::sleep(Duration::from_millis(200));
                         }
-                        Err(mpsc::TryRecvError::Disconnected) => unreachable!(),
+                        Err(TryRecvError::Disconnected) => unreachable!(),
                     }
                 }
             }
